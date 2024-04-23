@@ -30,16 +30,34 @@ def func(message):
         bot.send_message(message.chat.id, text="На сколько человек?", reply_markup=markup)
 
     elif message.text == '3-6':
-        bot.send_message(message.chat.id, "В таком случае роль мафии отводится одному игроку. Всем игрокам необходимо "
-                                          "поставить +")
-    elif message.text == '+':
-        roles = ['mafia', 'peace']
-        bot.send_message(message.from_user.id, f"Привет! Твоя роль: {random.choices(roles)}")
-
+        bot.send_message(message.chat.id, "В таком случае роль мафии отводится одному игроку.")
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        b = types.KeyboardButton("Раздать роли на 3-6 человек")
+        markup.add(b)
+        bot.send_message(message.chat.id,
+                         text="Нажми на кнопку, чтобы раздать роли, а остальным нужно поставить +", reply_markup=markup)
+    elif message.text == 'Раздать роли на 3-6 человек' or message.text == '+':
+        roli = ['мафия', 'мирный житель'] # он короче берет и раздает одну и ту же роль, я хз как сделать условие, чтобы каждому разное было
+        a = random.choice(roli)
+        if a == 'мафия':
+            roli.remove(a)
+        bot.send_message(message.from_user.id, f"Привет! Твоя роль: {a}")
     elif message.text == "7-9":
         bot.send_message(message.chat.id, "В таком случае роль мафии отводится двум игрокам.")
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        b = types.KeyboardButton("Раздать роли на 7-9 человек")
+        markup.add(b)
+        bot.send_message(message.chat.id,
+                         text="Нажми на кнопку, чтобы раздать роли", reply_markup=markup)
+        roles(message)
     elif message.text == "10-11":
         bot.send_message(message.chat.id, "В таком случае роль мафии отводится трем игрокам.")
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        b = types.KeyboardButton("Раздать роли на 10-11 человек")
+        markup.add(b)
+        bot.send_message(message.chat.id,
+                         text="Нажми на кнопку, чтобы раздать роли", reply_markup=markup)
+        roles(message)
     elif message.text == "больше 12":
         bot.send_message(message.chat.id, "Напишите точное количество.")
     elif message.text:
@@ -49,9 +67,28 @@ def func(message):
         bot.send_message(message.chat.id, text="На такую команду я не запрограммирован")
 
 
+def roles(message):
+    if message.text == 'Раздать роли на 3-6 человек':
+        bot.send_message(message.chat.id, 'Всем игрокам необходимо поставить +')
+        roli = ['мафия', 'мирный житель']
+        a = random.choice(roli)
+        if a == 'мафия':
+            roli.remove(a)
+        bot.send_message(message.from_user.id, f"Привет! Твоя роль: {a}")
+    elif message.text == 'Раздать роли на 7-9 человек':
+        bot.send_message(message.chat.id, 'Всем игрокам необходимо поставить +')
+        roli = ['мафия' * 2, 'мирный житель', 'доктор', 'комиссар']
+        a = random.choice(roli)
+        if a == 'мафия' or a == 'доктор' or a == 'комиссар':
+            roli.remove(a)
+        bot.send_message(message.from_user.id, f"Привет! Твоя роль: {a}")
+    elif message.text == 'Раздать роли на 10-11 человек':
+        bot.send_message(message.chat.id, 'Всем игрокам необходимо поставить +')
+        roli = ['мафия' * 3, 'мирный житель', 'доктор', 'комиссар', 'путана']
+        a = random.choice(roli)
+        if a == 'мафия' or a == 'доктор' or a == 'комиссар' or a == 'путана':
+            roli.remove(a)
+        bot.send_message(message.from_user.id, f"Привет! Твоя роль: {a}")
+
+
 bot.polling(none_stop=True)
-
-
-async def stop(update):
-    await update.message.reply_text("Всего доброго!")
-    return ConversationHandler.END
