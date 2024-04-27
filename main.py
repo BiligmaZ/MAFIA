@@ -2,8 +2,7 @@ import random
 import math
 import telebot
 import telegram
-from telebot import types  # для указание типов
-from telegram.ext import ConversationHandler
+from telebot import types  # для указания типов
 
 bot = telebot.TeleBot("6443463170:AAH1a3G2p72uA2INs3_5_WHgDHB7HlnHIwM")
 players = []
