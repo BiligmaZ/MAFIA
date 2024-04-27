@@ -1,8 +1,12 @@
+import math
+import random
+
 from telegram.ext import *
 from telegram import *
 import argparse
 import requests
 import telebot
+from telebot import types
 
 bot = telebot.TeleBot("6443463170:AAH1a3G2p72uA2INs3_5_WHgDHB7HlnHIwM")
 players = dict()
@@ -143,6 +147,38 @@ def main():
         fallbacks=[CommandHandler('stop', stop)]
     )
     dp.add_handler(conv_handler)
+
+
+def start(update, context): # Приветствуем пользователя и просим ввести его данные о геолокации
+    global user_city
+    global is_admin
+    update.message.reply_text(
+        'Введите ваш город и адрес, '
+        'чтобы разблокировать весь функционал бота')
+    update.message.reply_text('Введите город',
+                              reply_markup=ReplyKeyboardRemove())
+    return 1
+
+
+def get_city(update, context): # Получаем город пользователя
+
+    global user_city
+    user_city = update.message.text
+    update.message.reply_text('Введите адрес')
+    return 2
+
+
+def get_address(update, context): # Получаем адрес пользователя
+
+    global user_address
+    user_address = update.message.text
+    reply_keyboard = [['Да', 'Нет']]
+    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+    update.message.reply_text(f'Ваш город: {user_city}')
+    update.message.reply_text(f'Ваш адрес: {user_address}')
+    update.message.reply_text('Вы правильно ввели данные?',
+                              reply_markup=markup)
+    return 3
 
 
 bot.polling(none_stop=True)
