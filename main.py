@@ -295,7 +295,7 @@ def text_commands(update, context):  # Функция обработки тек�
         print(current_city)
 
     # Обработка команды на сдачу в игре "Угадай город"
-    if update.message.text == 'Сдаться' or try_counter >= 10:
+    if update.message.text == 'Сдаться' or try_counter >= 5:
         markup = ReplyKeyboardMarkup(keyboard)
         update.message.reply_text(f'Это был город: {current_city}',
                                   reply_markup=markup)
@@ -317,7 +317,7 @@ def text_commands(update, context):  # Функция обработки тек�
                 and update.message.text != current_city and try_counter >= 2:
             update.message.reply_text(
                 f'Неверно или ничего не написано, '
-                f'осталось {11 - try_counter} попыток')
+                f'осталось {6 - try_counter} попыток')
 
     # Возвращение в меню игр
     if update.message.text == '⏪ Вернуться назад':
@@ -362,7 +362,7 @@ def text_commands(update, context):  # Функция обработки тек�
         players.append(update.message.from_user.id)
 
     elif update.message.text == 'Все игроки на месте':
-        roles(update)
+        roles(context, players, count)
 
 
 def stop(update, context):

@@ -1,6 +1,5 @@
 from telegram import *
 import random
-from main import *
 
 
 def func(update, context):
@@ -9,7 +8,7 @@ def func(update, context):
     update.message.reply_text("На сколько человек?", reply_markup=markup)
 
 
-def roles(update):
+def roles(context, players, count):
     p = [i for i in players]
     c = len(p)
     if c <= 6:
@@ -19,7 +18,6 @@ def roles(update):
     for i in range(c):
         a = random.choice(roli)
         b = random.choice(p)
-        players[b] = a
-        update.message.reply_text(b, f"Привет! Твоя роль: {a}")
+        context.bot.send_message(chat_id=b, text=f"Твоя роль: {a}")
         roli.remove(a)
         p.remove(b)

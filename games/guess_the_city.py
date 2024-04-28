@@ -1,42 +1,50 @@
 import os
 from random import choice, randint
 import requests
+import glob
 
 
 def guess_the_city():
     # Игра "Угадай город"
     # :return: название города
-    cities_list = ['Чита', 'Тюмень', 'Москва', 'Екатеринбург', 'Улан-Удэ']  # Список городов в игре
+    cities_list = ['Чита', 'Тюмень', 'Москва', 'Екатеринбург', 'Улан-Удэ',
+                   "Архангельск", "Детройт", "Ессентуки", "Йошкар-Ола", "Калининград", "Кисловодск",
+                   "Париж", "Петрозаводск", "Пхеньян", "Санкт-Петербург", "Сызрань", "Филадельфия", "Ханчжоу",
+                   "Мюнхен", "Осло", "Мурманск"]  # Список городов в игре
     orig_path = os.getcwd()
     current_city = choice(cities_list)
-    print(current_city)  # Правильный ответ
-    try:
-        geocoder_request = f"http://geocode-maps.yandex.ru/1.x/?apikey=4" \
-                           f"0d1649f-0493-4b70-98ba-98533de771" \
-                           f"0b&geocode={current_city}&format=json"
-        response = requests.get(geocoder_request)
-        json_response = response.json()
+    cities_img = glob.glob('img/*')
+    print(f'img/guess_the_city_{current_city}.jpg' in cities_img)  # Правильный ответ
+    if f'img/guess_the_city_{current_city}.jpg' in cities_img:
+        return [f'guess_the_city_{current_city}.jpg', current_city]
+    else:
+        try:
+            geocoder_request = f"http://geocode-maps.yandex.ru/1.x/?apikey=4" \
+                               f"0d1649f-0493-4b70-98ba-98533de771" \
+                               f"0b&geocode={current_city}&format=json"
+            response = requests.get(geocoder_request)
+            json_response = response.json()
 
-        toponym = json_response["response"]["GeoObjectCollection"][
-            "featureMember"][0]["GeoObject"]
+            toponym = json_response["response"]["GeoObjectCollection"][
+                "featureMember"][0]["GeoObject"]
 
-        pos = toponym['Point']['pos']
+            pos = toponym['Point']['pos']
 
-        map_request = f'https://static-maps.yandex.ru/' \
-                      f'1.x/?ll={pos.split()[0]}%2C{pos.split()[1]}' \
-                      f'&spn=0.02,0.02&l=sat'
+            map_request = f'https://static-maps.yandex.ru/' \
+                          f'1.x/?ll={pos.split()[0]}%2C{pos.split()[1]}' \
+                          f'&spn=0.02,0.02&l=sat'
 
-        response_map = requests.get(map_request)
-        map_file = f"guess_maps{current_city}_{randint(0, 100000)}.jpg"
+            response_map = requests.get(map_request)
+            map_file = f"guess_maps{current_city}_{randint(0, 100000)}.jpg"
 
-        os.chdir(f'{os.getcwd()}\img')
+            os.chdir(f'{os.getcwd()}\img')
 
-        with open(map_file, "wb") as file:
-            file.write(response_map.content)
+            with open(map_file, "wb") as file:
+                file.write(response_map.content)
 
-        os.chdir(orig_path)
+            os.chdir(orig_path)
 
-        return [map_file, current_city]
-    except Exception:
-        os.chdir(orig_path)
-        return ['Кажется вы всё сломали']
+            return [map_file, current_city]
+
+        except Exception:
+            return 'Error'
