@@ -2,12 +2,14 @@ from telegram.ext import *
 from telegram import *
 from other.weather import weather
 from other.comments import comments
+from maps.metro import metro
+from maps.pharmacy import pharmacy
+from maps.closest_vkusno import closest_vkusno
 from games.guess_the_city import guess_the_city
 from games.dice import throw_a_cube, dice
 import argparse
 import random
 import math
-from telebot import types
 
 parser = argparse.ArgumentParser()
 
@@ -110,7 +112,7 @@ def func(update, context):
     global count
     if update.message.text == "Распределение игроков":
         markup = types.ReplyKeyboardRemove()
-        update.message.reply_text(update.message.chat.id, text="На сколько человек?", reply_markup=markup)
+        update.message.reply_text(update.message.chat.id, text="На какое количество человек?", reply_markup=markup)
 
     elif update.message.text.isdigit():
         if int(update.message.text) < 7:
@@ -162,7 +164,6 @@ def get_city(update, context):  # Получаем город пользоват
 
 
 def get_address(update, context):  # Получаем адрес пользователя
-
     global user_address
     user_address = update.message.text
     reply_keyboard = [['Да', 'Нет']]
@@ -206,6 +207,61 @@ def get_comments(update, context):  # Получаем отзыв от поль�
     return 5
 
 
+def get_metro(update, context):  # Проверяем наличие метро возле пользователя и выводим карту
+
+    global user_city
+    global user_address
+    metro_is_near = True
+    metro_name = metro(user_city, user_address)[0]
+    try:
+        file_name = metro(user_city, user_address)[1]
+        to_metro_distance = metro(user_city, user_address)[2]
+    except Exception as e:
+        metro_is_near = False
+    if metro_name != 'Рядом с вами нету метро' and metro_is_near is True:
+        update.message.reply_photo(photo=open(f'img/{file_name}', 'rb'))
+        update.message.reply_text(
+            f'Ближайшая к вам станция метро: {metro_name}')
+        update.message.reply_text(
+            f'Расстояние до станции: {to_metro_distance}м')
+    else:
+        update.message.reply_text(
+            f'Сейчас бы метро в {user_city} искать')
+
+
+def get_pharmacy(update, context):  # Выводим ближайшие 10 аптек в городе
+
+    global user_city
+    global user_address
+    try:
+        file_name = pharmacy(user_city, user_address)[0]
+        update.message.reply_photo(photo=open(f'img/{file_name}', 'rb'))
+    except Exception:
+        update.message.reply_text(
+            f'Рядом с вами нету аптеки, земля вам пухом!')
+
+
+def get_closest_vkusno(update, context):  # Выводим ближайший макдональдс к пользователю
+
+    global user_city
+    global user_address
+    try:
+        file_name = closest_vkusno(user_city, user_address)[0]
+        pharmacy_name = closest_vkusno(user_city, user_address)[1]
+        distance_to_pharmacy = closest_vkusno(user_city, user_address)[2]
+        pharmacy_address = closest_vkusno(user_city, user_address)[3]
+        pharmacy_time_of_works = closest_vkusno(user_city, user_address)[4]
+        update.message.reply_photo(photo=open(f'img/{file_name}', 'rb'))
+        update.message.reply_text(
+            f'{pharmacy_name} {pharmacy_time_of_works}')
+        update.message.reply_text(
+            f'Расстояние до {pharmacy_address}: {distance_to_pharmacy}м')
+    except Exception as e:
+        print(e)
+        update.message.reply_text(
+            f'Рядом с вами нету Вкусно - и точка!, удачи не помереть с голоду!')
+
+
 def text_commands(update, context):  # Функция обработки текстовых команд с клавиатуры
     global user_comment
     global keyboard
@@ -246,12 +302,23 @@ def text_commands(update, context):  # Функция обработки тек�
         else:
             update.message.reply_text('Ваш отзыв пуст',
                                       reply_markup=markup)
+    # Обработка команды вывода метро
+    if update.message.text == '🚇 Найти ближайшее метро':
+        get_metro(update, context)
 
-    # Обрабтока команды вывода погоды
+    # Обработка команды вывода аптек города
+    if update.message.text == '🏥 Показать аптеки недалеко от вас':
+        get_pharmacy(update, context)
+
+    # Обработка команды вывода ближайшего макдональдса
+    if update.message.text == '🍟 Найти ближайшую Вкусно - и точка!':
+        get_closest_vkusno(update, context)
+
+    # Обработка команды вывода погоды
     if update.message.text == '🌤 Узнать погоду':
         get_weather(update, context)
 
-        # Обрабтока команды на смены клавиатуры на игровую
+        # Обработка команды на смены клавиатуры на игровую
         if update.message.text == '🎮 Игры':
             keyboard = keyboard_games
             markup = ReplyKeyboardMarkup(keyboard)
@@ -259,7 +326,7 @@ def text_commands(update, context):  # Функция обработки тек�
                 f'Переключаю на клавиатуру "{update.message.text}"',
                 reply_markup=markup)
 
-        # Обрабтока команды на смены клавиатуры на основную
+        # Обработка команды на смены клавиатуры на основную
         if update.message.text == '🕶 Основные функции':
             keyboard = keyboard_main
             markup = ReplyKeyboardMarkup(keyboard)
@@ -267,7 +334,7 @@ def text_commands(update, context):  # Функция обработки тек�
                 f'Переключаю на клавиатуру "{update.message.text}"',
                 reply_markup=markup)
 
-        # Обрабтока команды на начало игры "Угадай город"
+        # Обработка команды на начало игры "Угадай город"
         if update.message.text == '🌆 Угадай город':
             reply_keyboard = [['Сдаться']]
             markup = ReplyKeyboardMarkup(reply_keyboard)
@@ -279,7 +346,7 @@ def text_commands(update, context):  # Функция обработки тек�
             game_is_played = True
             print(current_city)
 
-        # Обрабтока команды на сдачу в игре "Угадай город"
+        # Обработка команды на сдачу в игре "Угадай город"
         if update.message.text == 'Сдаться' or try_counter >= 10:
             markup = ReplyKeyboardMarkup(keyboard)
             update.message.reply_text(f'Это был город: {current_city}',
@@ -287,15 +354,6 @@ def text_commands(update, context):  # Функция обработки тек�
             try_counter = 0
             game_is_played = False
             current_city = ''
-
-        if update.message.text == '🦠 В регионах':
-            update.message.reply_text('Введите ваш регион')
-            return 6
-
-        if update.message.text == '🦠 В странах':
-            update.message.reply_text('Введите вашу страну (на английском языке)')
-            update.message.reply_text('Что-бы вывести общию статистику нажмите /tut')
-            return 7
 
         # Проверка правильности ответа в игре "Угадай город"
         if game_is_played is True:
@@ -318,7 +376,7 @@ def text_commands(update, context):  # Функция обработки тек�
             markup = ReplyKeyboardMarkup(keyboard)
             update.message.reply_text('Возвращаемся назад', reply_markup=markup)
 
-        # Кидаемй кубик
+        # Кидаем кубик
         if update.message.text == '🎲 Кинуть кубик':
             dice(update, context)
 
@@ -333,7 +391,6 @@ def text_commands(update, context):  # Функция обработки тек�
         # Кидаем 20-гранный кубик
         if update.message.text == '🎱 Кинуть 20-гранный кубик':
             update.message.reply_text(' '.join(throw_a_cube(20)))
-
 
 
 def stop(update, context):
