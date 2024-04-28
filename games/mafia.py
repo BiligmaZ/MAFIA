@@ -1,10 +1,11 @@
 from telegram import *
 import random
-from main import keyboard, players, count
+from main import *
 
 
 def func(update, context):
-    markup = ReplyKeyboardMarkup(keyboard)
+    reply_keyboard = [['⏪ Вернуться назад']]
+    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False)
     update.message.reply_text("На сколько человек?", reply_markup=markup)
 
 

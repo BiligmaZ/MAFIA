@@ -1,5 +1,4 @@
 from telegram.ext import *
-from telegram import *
 from other.weather import weather
 from other.comments import comments
 from maps.metro import metro
@@ -68,7 +67,7 @@ keyboard_main = [['🌤 Узнать погоду', '🖊️ Написать о
                  ['🚇 Найти ближайшее метро', '🍟 Найти ближайшую Вкусно - и точка!',
                   '🏥 Показать аптеки недалеко от вас'],
                  ['🎮 Игры']]
-keyboard_games = [['🌆 Угадай город', '🎲 Кинуть кубик', 'Играть в мафию'],
+keyboard_games = [['🌆 Угадай город', '🎲 Кинуть кубик', '🕵 Играть в мафию'],
                   ['🕶 Основные функции']]
 keyboard = keyboard_main
 
@@ -159,7 +158,7 @@ def get_comments(update, context):  # Получаем отзыв от поль�
 
 
 def get_metro(update, context):  # Проверяем наличие метро возле пользователя и выводим карту
-    global user_city
+    global user_city, file_name, to_metro_distance
     global user_address
     metro_is_near = True
     metro_name = metro(user_city, user_address)[0]
@@ -212,7 +211,7 @@ def get_closest_mac(update, context):  # Выводим ближайший ма�
 
 
 def text_commands(update, context):  # Функция обработки текстовых команд с клавиатуры
-    global user_comment
+    global user_comment, count
     global keyboard
     global current_city
     global game_is_played
@@ -341,7 +340,8 @@ def text_commands(update, context):  # Функция обработки тек�
     if update.message.text == '🎱 Кинуть 20-гранный кубик':
         update.message.reply_text(' '.join(throw_a_cube(20)))
 
-    if update.message.text == 'Играть в мафию':
+    # Раздаем роли для игры в мафию
+    if update.message.text == '🕵 Играть в мафию':
         func(update, context)
 
     if update.message.text.isdigit():
@@ -351,7 +351,7 @@ def text_commands(update, context):  # Функция обработки тек�
         elif int(update.message.text) > 6:
             count = math.ceil(int(update.message.text) / 4)
             print(count)
-        reply_keyboard = [['Начинаем', 'Все игроки на месте']]
+        reply_keyboard = [['Начинаем', 'Все игроки на месте', '⏪ Вернуться назад']]
         markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
         update.message.reply_text(f"В таком случае mafiosi: {count}", reply_markup=markup)
 

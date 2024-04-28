@@ -6,7 +6,7 @@ import requests
 def guess_the_city():
     # Игра "Угадай город"
     # :return: название города
-    cities_list = ['Тюмень', 'Москва', 'Екатеринбург']  # Список городов в игре
+    cities_list = ['Чита', 'Тюмень', 'Москва', 'Екатеринбург', 'Улан-Удэ']  # Список городов в игре
     orig_path = os.getcwd()
     current_city = choice(cities_list)
     print(current_city)  # Правильный ответ
