@@ -2,7 +2,12 @@ from telegram.ext import *
 from telegram import *
 from other.weather import weather
 from other.comments import comments
+from games.guess_the_city import guess_the_city
+from games.dice import throw_a_cube, dice
 import argparse
+import random
+import math
+from telebot import types
 
 parser = argparse.ArgumentParser()
 
@@ -63,6 +68,8 @@ keyboard_games = [['🌆 Угадай город', '🎲 Кинуть кубик
                   ['🕶 Основные функции']]
 keyboard_admin = [['Перезапустить бота']]
 keyboard = keyboard_main
+players = []
+count = 0
 
 
 def main():
@@ -79,7 +86,8 @@ def main():
             2: [MessageHandler(Filters.text, get_address)],
             3: [MessageHandler(Filters.text, second_start)],
             4: [MessageHandler(Filters.text, get_comments)],
-            5: [MessageHandler(Filters.text, text_commands)]
+            5: [MessageHandler(Filters.text, text_commands)],
+            6: [MessageHandler(Filters.text, func)]
         },
 
         fallbacks=[CommandHandler('stop', stop)]
@@ -95,6 +103,55 @@ def start(update, context):  # Приветствуем пользователя
     update.message.reply_text('Введите город',
                               reply_markup=ReplyKeyboardRemove())
     return 1
+
+
+def func(update, context):
+    global players
+    global count
+    if update.message.text == "Распределение игроков":
+        markup = types.ReplyKeyboardRemove()
+        update.message.reply_text(update.message.chat.id, text="На сколько человек?", reply_markup=markup)
+
+    elif update.message.text.isdigit():
+        if int(update.message.text) < 7:
+            count = 1
+            print(count)
+        elif int(update.message.text) > 6:
+            count = math.ceil(int(update.message.text) / 4)
+            print(count)
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        b = types.KeyboardButton("Begin")
+        b1 = types.KeyboardButton('All players are here')
+        markup.add(b)
+        markup.add(b1)
+        update.message.reply_text(update.message.chat.id, f"В таком случае mafiosi: {count}", reply_markup=markup)
+
+    elif update.message.text == 'Begin':
+        update.message.reply_text(update.message.chat.id, text="Участники, пожалуйста, поставьте +")
+    elif update.message.text == '+':
+        players[update.message.from_user.id] = []
+    elif update.message.text == 'All players are here':
+        roles(update)
+    else:
+        update.message.reply_text(update.message.chat.id, text="На такую команду я не запрограммирован")
+
+
+def roles(update):
+    global count
+    global players
+    p = [i for i in players]
+    c = len(p)
+    if c <= 6:
+        roli = ['мафия' * count, 'мирный житель' * (c - count - 2), 'комиссар', 'путана']
+    else:
+        roli = ['мафия' * count, 'мирный житель' * (c - count - 3), 'комиссар', 'путана', 'doctor']
+    for i in range(c):
+        a = random.choice(roli)
+        b = random.choice(p)
+        players[b] = a
+        update.message.reply_text(b, f"Привет! Твоя роль: {a}")
+        roli.remove(a)
+        p.remove(b)
 
 
 def get_city(update, context):  # Получаем город пользователя
@@ -193,6 +250,90 @@ def text_commands(update, context):  # Функция обработки тек�
     # Обрабтока команды вывода погоды
     if update.message.text == '🌤 Узнать погоду':
         get_weather(update, context)
+
+        # Обрабтока команды на смены клавиатуры на игровую
+        if update.message.text == '🎮 Игры':
+            keyboard = keyboard_games
+            markup = ReplyKeyboardMarkup(keyboard)
+            update.message.reply_text(
+                f'Переключаю на клавиатуру "{update.message.text}"',
+                reply_markup=markup)
+
+        # Обрабтока команды на смены клавиатуры на основную
+        if update.message.text == '🕶 Основные функции':
+            keyboard = keyboard_main
+            markup = ReplyKeyboardMarkup(keyboard)
+            update.message.reply_text(
+                f'Переключаю на клавиатуру "{update.message.text}"',
+                reply_markup=markup)
+
+        # Обрабтока команды на начало игры "Угадай город"
+        if update.message.text == '🌆 Угадай город':
+            reply_keyboard = [['Сдаться']]
+            markup = ReplyKeyboardMarkup(reply_keyboard)
+            map_file, current_city = guess_the_city()
+            update.message.reply_text(
+                f'Напишите названия этого города', reply_markup=markup)
+            update.message.reply_photo(
+                photo=open(f'img/{map_file}', 'rb'))
+            game_is_played = True
+            print(current_city)
+
+        # Обрабтока команды на сдачу в игре "Угадай город"
+        if update.message.text == 'Сдаться' or try_counter >= 10:
+            markup = ReplyKeyboardMarkup(keyboard)
+            update.message.reply_text(f'Это был город: {current_city}',
+                                      reply_markup=markup)
+            try_counter = 0
+            game_is_played = False
+            current_city = ''
+
+        if update.message.text == '🦠 В регионах':
+            update.message.reply_text('Введите ваш регион')
+            return 6
+
+        if update.message.text == '🦠 В странах':
+            update.message.reply_text('Введите вашу страну (на английском языке)')
+            update.message.reply_text('Что-бы вывести общию статистику нажмите /tut')
+            return 7
+
+        # Проверка правильности ответа в игре "Угадай город"
+        if game_is_played is True:
+            try_counter += 1
+            if update.message.text == current_city:
+                markup = ReplyKeyboardMarkup(keyboard)
+                update.message.reply_text(
+                    f'Правильно! Это был город: {current_city}',
+                    reply_markup=markup)
+                try_counter = 0
+                game_is_played = False
+            elif game_is_played is True \
+                    and update.message.text != current_city and try_counter >= 2:
+                update.message.reply_text(
+                    f'Неверно или ничего не написано, '
+                    f'осталось {11 - try_counter} попыток')
+
+        # Возвращение в меню игр
+        if update.message.text == '⏪ Вернуться назад':
+            markup = ReplyKeyboardMarkup(keyboard)
+            update.message.reply_text('Возвращаемся назад', reply_markup=markup)
+
+        # Кидаемй кубик
+        if update.message.text == '🎲 Кинуть кубик':
+            dice(update, context)
+
+        # Кидаем один шестигранный кубик
+        if update.message.text == '🎲 Кинуть один шестигранный кубик':
+            update.message.reply_text(' '.join(throw_a_cube(6)))
+
+        # Кидаем 2 шестигранных кубика одновременно
+        if update.message.text == '🎲 🎲Кинуть 2 шестигранных кубика одновременно':
+            update.message.reply_text(' '.join(throw_a_cube(6, 2)))
+
+        # Кидаем 20-гранный кубик
+        if update.message.text == '🎱 Кинуть 20-гранный кубик':
+            update.message.reply_text(' '.join(throw_a_cube(20)))
+
 
 
 def stop(update, context):
