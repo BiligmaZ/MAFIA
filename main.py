@@ -1,16 +1,22 @@
-import math
-import random
-
 from telegram.ext import *
 from telegram import *
+from other.weather import weather
+from other.comments import comments
 import argparse
-import requests
-import telebot
-from telebot import types
 
-bot = telebot.TeleBot("6443463170:AAH1a3G2p72uA2INs3_5_WHgDHB7HlnHIwM")
-players = dict()
-count = 0
+parser = argparse.ArgumentParser()
+
+try:
+    parser.add_argument("token", nargs="*")
+    args = parser.parse_args()
+    updater_ = Updater(args.token[0])
+except Exception:
+    try:
+        f = open("token.txt", encoding="utf8")
+        updater_ = Updater(f.readlines()[-1])
+    except Exception:
+        print('Введите правильный токен')
+
 user_name = ''  # Переменная с именем пользователя
 user_city = ''  # Переменная с городом пользователя
 user_address = ''  # Переменная с адресом пользователя
@@ -19,7 +25,6 @@ country = ''
 current_city = ''  # Переменная с текущим городом в игре "Угадай город"
 try_counter = 0  # Счёичмк попыток в игре "Угадай город"
 game_is_played = False  # Переменная с состаянием игры "Угадай город"
-is_admin = True  # Переменна яс состоянием меню админа
 dumb_touple = {'Московская область': '1', 'Санкт-Петербург': '2', 'Москва': '213', 'Россия': '225',
                'Севастополь': '959', 'Республика Крым': '977', 'Ленинградская область': '10174',
                'Ненецкий автономный округ': '10176', 'Республика Алтай': '10231', 'Республика Тыва': '10233',
@@ -50,79 +55,14 @@ dumb_touple = {'Московская область': '1', 'Санкт-Пете�
                'Томская область': '11353', 'Амурская область': '11375', 'Камчатский край': '11398',
                'Магаданская область': '11403', 'Приморский край': '11409', 'Республика Саха (Якутия)': '11443',
                'Сахалинская область': '11450', 'Хабаровский край': '11457', 'Забайкальский край': '21949'}
-keyboard_main = [['🦠 Covid-19'],
-                 ['🌤 Узнать погоду', '🖊️ Написать отзыв', '🌆 Ввести новый адрес'],
+keyboard_main = [['🌤 Узнать погоду', '🖊️ Написать отзыв', '🌆 Ввести новый адрес'],
                  ['🚇 Найти ближайшее метро', '🍟 Найти ближайший макдональдс',
                   '🏥 Показать аптеки недалеко от вас'],
                  ['🎮 Игры']]
 keyboard_games = [['🌆 Угадай город', '🎲 Кинуть кубик'],
                   ['🕶 Основные функции']]
-covid_keyboard = [['🦠 В регионах', '🦠 В странах'],
-                  ['🕶 Основные функции']]
 keyboard_admin = [['Перезапустить бота']]
 keyboard = keyboard_main
-
-
-@bot.message_handler(commands=['start'])
-def start(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    btn1 = types.KeyboardButton("Начать игру")
-    markup.add(btn1)
-    bot.send_message(message.chat.id,
-                     text="Привет, {0.first_name}! Начнем игру?".format(
-                         message.from_user), reply_markup=markup)
-
-
-@bot.message_handler(content_types=['text'])
-def func(message):
-    global players
-    global count
-    if message.text == "Начать игру":
-        markup = types.ReplyKeyboardRemove()
-        bot.send_message(message.chat.id, text="На сколько человек?", reply_markup=markup)
-
-    elif message.text.isdigit():
-        if int(message.text) < 7:
-            count = 1
-            print(count)
-        elif int(message.text) > 6:
-            count = math.ceil(int(message.text) / 4)
-            print(count)
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        b = types.KeyboardButton("Begin")
-        b1 = types.KeyboardButton('All players are here')
-        markup.add(b)
-        markup.add(b1)
-        bot.send_message(message.chat.id, f"В таком случае mafiosi: {count}", reply_markup=markup)
-
-    elif message.text == 'Begin':
-        bot.send_message(message.chat.id, text="Участники, пожалуйста, поставьте +")
-    elif message.text == '+':
-        players[message.from_user.id] = []
-    elif message.text == 'All players are here':
-        roles(message)
-    else:
-        bot.send_message(message.chat.id, text="На такую команду я не запрограммирован")
-
-
-def roles(message):
-    global count
-    global players
-    p = [i for i in players.items()]
-    c = len(p)
-    print(p, c, count)
-    if c <= 6:
-        roli = ['мафия' * count, 'мирный житель' * (c - count - 2), 'комиссар', 'путана']
-    else:
-        roli = ['мафия' * count, 'мирный житель' * (c - count - 3), 'комиссар', 'путана', 'doctor']
-    for i in range(c):
-        a = random.choice(roli)
-        b = random.choice(p)
-        print(a, b)
-        players[b] = a
-        bot.send_message(b, f"Привет! Твоя роль: {a}")
-        roli.remove(a)
-        p.remove(b)
 
 
 def main():
@@ -139,9 +79,7 @@ def main():
             2: [MessageHandler(Filters.text, get_address)],
             3: [MessageHandler(Filters.text, second_start)],
             4: [MessageHandler(Filters.text, get_comments)],
-            5: [MessageHandler(Filters.text, text_commands)],
-            6: [MessageHandler(Filters.text, get_covid_info_reg)],
-            7: [MessageHandler(Filters.text, get_covid_info_coun)]
+            5: [MessageHandler(Filters.text, text_commands)]
         },
 
         fallbacks=[CommandHandler('stop', stop)]
@@ -149,9 +87,8 @@ def main():
     dp.add_handler(conv_handler)
 
 
-def start(update, context): # Приветствуем пользователя и просим ввести его данные о геолокации
+def start(update, context):  # Приветствуем пользователя и просим ввести его данные о геолокации
     global user_city
-    global is_admin
     update.message.reply_text(
         'Введите ваш город и адрес, '
         'чтобы разблокировать весь функционал бота')
@@ -160,15 +97,14 @@ def start(update, context): # Приветствуем пользователя 
     return 1
 
 
-def get_city(update, context): # Получаем город пользователя
-
+def get_city(update, context):  # Получаем город пользователя
     global user_city
     user_city = update.message.text
     update.message.reply_text('Введите адрес')
     return 2
 
 
-def get_address(update, context): # Получаем адрес пользователя
+def get_address(update, context):  # Получаем адрес пользователя
 
     global user_address
     user_address = update.message.text
@@ -181,4 +117,94 @@ def get_address(update, context): # Получаем адрес пользова
     return 3
 
 
-bot.polling(none_stop=True)
+def second_start(update, context):  # Уточняем правильно ли пользователь ввёл данные и выводим клавиатуру с главным меню
+    global user_city
+    if update.message.text == 'Нет':
+        update.message.reply_text('Введите город')
+        return 1
+    else:
+        markup = ReplyKeyboardMarkup(keyboard)
+        update.message.reply_text('Выберите действие',
+                                  reply_markup=markup)
+    return 5
+
+
+def get_weather(update, context):  # Выводим значение температуры пользователю
+    global user_city
+    if weather(user_city)["conditions"] is not None:
+        update.message.reply_text(
+            f'В городе {user_city} {weather(user_city)["conditions"]}')
+        update.message.reply_text(
+            f'Температура: {weather(user_city)["temp"]}C')
+    else:
+        update.message.reply_text(
+            'Проверьте написание города и повторите попытку')
+
+
+def get_comments(update, context):  # Получаем отзыв от пользователя
+    global user_comment
+    global user_name
+    user_name = update.message.from_user.username
+    user_comment = update.message.text
+    return 5
+
+
+def text_commands(update, context):  # Функция обработки текстовых команд с клавиатуры
+    global user_comment
+    global keyboard
+    global current_city
+    global game_is_played
+    global try_counter
+
+    # Возвращение в начало
+    if update.message.text == '/start':
+        update.message.reply_text(
+            'Введите ваш город и адрес, что'
+            'бы разблокировать весь функционал бота')
+        update.message.reply_text('Введите город')
+        return 1
+
+    # Ввод нового адреса
+    if update.message.text == '🌆 Ввести новый адрес':
+        update.message.reply_text('Введите город')
+        return 1
+
+    # Ввод отзыва
+    if update.message.text == '🖊️ Написать отзыв':
+        reply_keyboard = [['Подтвердить']]
+        markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+        update.message.reply_text(
+            f'Сюда вы можете написать ваш отзыв', reply_markup=markup)
+        return 4
+
+    # Подтверждение отзыва
+    if update.message.text == 'Подтвердить':
+        print("user_comment =", user_comment)
+        markup = ReplyKeyboardMarkup(keyboard)
+        if user_comment != '':
+            update.message.reply_text('Ваш отзыв успешно записан!',
+                                      reply_markup=markup)
+            comments(user_comment, user_name)
+            user_comment = ''
+        else:
+            update.message.reply_text('Ваш отзыв пуст',
+                                      reply_markup=markup)
+
+    # Обрабтока команды вывода погоды
+    if update.message.text == '🌤 Узнать погоду':
+        get_weather(update, context)
+
+
+def stop(update, context):
+    update.message.reply_text(
+        "До свидания")
+    return ConversationHandler.END  # Константа, означающая конец диалога.
+
+
+if __name__ == '__main__':
+    main()
+    try:
+        updater_.start_polling()
+        updater_.idle()
+    except Exception:
+        pass
