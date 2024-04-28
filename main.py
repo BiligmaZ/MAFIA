@@ -10,7 +10,6 @@ from games.dice import throw_a_cube, dice
 import argparse
 import random
 import math
-from telebot import types
 
 parser = argparse.ArgumentParser()
 
@@ -111,7 +110,7 @@ def func(update, context):
     global players
     global count
     markup = ReplyKeyboardMarkup(keyboard)
-    update.message.reply_text(update.message.chat.id, text="На сколько человек?", reply_markup=markup)
+    update.message.reply_text("На сколько человек?", reply_markup=markup)
     if update.message.text.isdigit():
         if int(update.message.text) < 7:
             count = 1
@@ -119,21 +118,16 @@ def func(update, context):
         elif int(update.message.text) > 6:
             count = math.ceil(int(update.message.text) / 4)
             print(count)
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        b = types.KeyboardButton("Begin")
-        b1 = types.KeyboardButton('All players are here')
-        markup.add(b)
-        markup.add(b1)
-        update.message.reply_text(update.message.chat.id, f"В таком случае mafiosi: {count}", reply_markup=markup)
+        reply_keyboard = [['Начинаем', 'Все игроки на месте']]
+        markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+        update.message.reply_text("В таком случае mafiosi: {count}", reply_markup=markup)
 
-    elif update.message.text == 'Begin':
-        update.message.reply_text(update.message.chat.id, text="Участники, пожалуйста, поставьте +")
+    elif update.message.text == 'Начинаем':
+        update.message.reply_text(text="Участники, пожалуйста, поставьте +")
     elif update.message.text == '+':
         players[update.message.from_user.id] = []
-    elif update.message.text == 'All players are here':
+    elif update.message.text == 'Все игроки на месте':
         roles(update)
-    else:
-        update.message.reply_text(update.message.chat.id, text="На такую команду я не запрограммирован")
 
 
 def roles(update):
@@ -207,9 +201,6 @@ def get_comments(update, context):  # Получаем отзыв от поль�
 
 
 def get_metro(update, context):  # Проверяем наличие метро возле пользователя и выводим карту
-
-    """
-    """
     global user_city
     global user_address
     metro_is_near = True
@@ -392,7 +383,7 @@ def text_commands(update, context):  # Функция обработки тек�
     if update.message.text == '🎱 Кинуть 20-гранный кубик':
         update.message.reply_text(' '.join(throw_a_cube(20)))
 
-    if update.message.text == 'Игра в мафию':
+    if update.message.text == 'Играть в мафию':
         func(update, context)
 
 
