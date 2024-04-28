@@ -5,12 +5,10 @@ from maps.distance import lonlat_distance
 
 
 def metro(city, address):
-    """
-    Нахождение ближайшей станции метро
-    :param city: Город пользователя
-    :param address: Адрес пользователя
-    :return: Название станции, названия файла с картой, расстояние до станции
-    """
+    # Нахождение ближайшей станции метро
+    # :param city: Город пользователя
+    # :param address: Адрес пользователя
+    # :return: Название станции, названия файла с картой, расстояние до станции
     orig_path = os.getcwd()
     toponym_metro_tochno = 'Рядом с вами нету метро'
     full_adress = f'{city} {address}'
