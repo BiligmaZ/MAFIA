@@ -6,12 +6,13 @@ from maps.metro import metro
 from maps.pharmacy import pharmacy
 from maps.closest_vkusno import closest_vkusno
 from games.guess_the_city import guess_the_city
-from games.mafia import players, count
-from games.mafia import roles, func
+from games.mafia import *
 from games.dice import throw_a_cube, dice
 import argparse
 import math
 
+players = []
+count = 0
 parser = argparse.ArgumentParser()
 
 try:
@@ -352,13 +353,13 @@ def text_commands(update, context):  # Функция обработки тек�
             print(count)
         reply_keyboard = [['Начинаем', 'Все игроки на месте']]
         markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
-        update.message.reply_text("В таком случае mafiosi: {count}", reply_markup=markup)
+        update.message.reply_text(f"В таком случае mafiosi: {count}", reply_markup=markup)
 
     elif update.message.text == 'Начинаем':
         update.message.reply_text(text="Участники, пожалуйста, поставьте +")
 
     elif update.message.text == '+':
-        players[update.message.from_user.id] = []
+        players.append(update.message.from_user.id)
 
     elif update.message.text == 'Все игроки на месте':
         roles(update)
