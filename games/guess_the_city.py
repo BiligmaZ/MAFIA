@@ -1,7 +1,6 @@
 import os
 from random import choice, randint
 import requests
-import glob
 
 
 def guess_the_city():
@@ -13,9 +12,7 @@ def guess_the_city():
                    "Мюнхен", "Осло", "Мурманск"]  # Список городов в игре
     orig_path = os.getcwd()
     current_city = choice(cities_list)
-    cities_img = glob.glob('img/*')
-    print(f'img/guess_the_city_{current_city}.jpg' in cities_img)  # Правильный ответ
-    if f'img/guess_the_city_{current_city}.jpg' in cities_img:
+    if os.path.isfile(f'img/guess_the_city_{current_city}.jpg'):
         return [f'guess_the_city_{current_city}.jpg', current_city]
     else:
         try:
